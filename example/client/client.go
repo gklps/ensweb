@@ -66,7 +66,7 @@ func (c *Client) Login(userName string, password string) error {
 
 func (c *Client) LoginSession() (string, error) {
 
-	req, err := c.JSONRequest("POST", LoginSessionRoute, nil)
+	req, err := c.JSONRequest("GET", LoginSessionRoute, nil)
 	if err != nil {
 		return "", fmt.Errorf("Unable to frame request")
 	}

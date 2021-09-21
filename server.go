@@ -11,6 +11,7 @@ import (
 	"github.com/EnsurityTechnologies/adapter"
 	"github.com/EnsurityTechnologies/config"
 	"github.com/EnsurityTechnologies/logger"
+	"github.com/gorilla/mux"
 )
 
 const ServerTimeout = 5 * time.Second
@@ -28,15 +29,19 @@ type HandlerFunc func(req *Request) *Result
 
 // Server defines server
 type Server struct {
-	cfg       *config.Config
-	serverCfg *ServerConfig
-	s         *http.Server
-	mux       *http.ServeMux
-	log       logger.Logger
-	db        *adapter.Adapter
-	url       string
-	jwtSecret string
-	ss        map[string]*SessionStore
+	cfg        *config.Config
+	serverCfg  *ServerConfig
+	s          *http.Server
+	mux        *mux.Router
+	log        logger.Logger
+	auditLog   logger.Logger
+	db         *adapter.Adapter
+	url        string
+	jwtSecret  string
+	rootPath   string
+	publicPath string
+	ss         map[string]*SessionStore
+	debugMode  bool
 }
 
 type ServerConfig struct {
@@ -72,17 +77,27 @@ func NewServer(cfg *config.Config, serverCfg *ServerConfig, log logger.Logger) (
 	}
 
 	ts := Server{
-		s:         s,
-		cfg:       cfg,
-		serverCfg: serverCfg,
-		mux:       http.NewServeMux(),
-		log:       log.Named("ensweb"),
-		db:        db,
-		url:       serverURL,
-		ss:        make(map[string]*SessionStore),
+		s:          s,
+		cfg:        cfg,
+		serverCfg:  serverCfg,
+		mux:        mux.NewRouter(),
+		log:        log.Named("ensweb"),
+		db:         db,
+		url:        serverURL,
+		rootPath:   "views/",
+		publicPath: "public/",
+		ss:         make(map[string]*SessionStore),
 	}
 
 	return ts, nil
+}
+
+func (s *Server) SetDebugMode() {
+	s.debugMode = true
+}
+
+func (s *Server) SetAuditLog(log logger.Logger) {
+	s.auditLog = log
 }
 
 // Start starts the underlying HTTP server

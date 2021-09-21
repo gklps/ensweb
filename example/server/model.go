@@ -37,13 +37,13 @@ type User struct {
 }
 
 type Request struct {
-	UserName string `json:"UserName"`
-	Password string `json:"Password"`
+	UserName string `json:"email"`
+	Password string `json:"password"`
 }
 
 type Response struct {
-	Token   string `json:"Token"`
-	Message string `json:"Message"`
+	Token   string `json:"token"`
+	Message string `json:"message"`
 }
 
 type Token struct {

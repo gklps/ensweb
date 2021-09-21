@@ -4,12 +4,14 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"mime"
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/EnsurityTechnologies/helper/jsonutil"
 	"github.com/EnsurityTechnologies/wraperr"
@@ -166,14 +168,40 @@ func basicHandleFunc(s *Server, hf HandlerFunc) http.Handler {
 		req := basicRequestFunc(s, w, r)
 
 		res := hf(req)
-		if res != nil {
-
+		if res != nil && s.auditLog != nil {
+			timeDuration := time.Now().Nanosecond() - req.TimeIn.Nanosecond()
+			if res.Done {
+				s.auditLog.Info("HTTP request processed", "Path", req.Path, "IP Address", req.Connection.RemoteAddr, "Status", res.Status, "Duration", timeDuration)
+			} else {
+				s.auditLog.Error("HTTP request failed", "Path", req.Path, "IP Address", req.Connection.RemoteAddr, "Duration", timeDuration)
+			}
 		}
 
 	})
 }
 
+func (s *Server) IsFORM(req *Request) (bool, error) {
+	bufferedBody := newBufferedReader(req.r.Body)
+	req.r.Body = bufferedBody
+	head, err := bufferedBody.Peek(512)
+	if err != nil && err != bufio.ErrBufferFull && err != io.EOF {
+		return false, fmt.Errorf("error reading data")
+	}
+	if isForm(head, req.r.Header.Get("Content-Type")) {
+		return true, nil
+	}
+	return false, nil
+}
+
 func (s *Server) ParseJSON(req *Request, model interface{}) error {
 	_, err := parseJSONRequest(false, req.r, req.w, model)
 	return err
+}
+
+func (s *Server) ParseFORM(req *Request) (map[string]interface{}, error) {
+	formData, err := parseFormRequest(req.r)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing form data")
+	}
+	return formData, nil
 }

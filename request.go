@@ -62,6 +62,10 @@ func getConnection(r *http.Request) (connection *Connection) {
 	return
 }
 
+func (req *Request) GetHTTPRequest() *http.Request {
+	return req.r
+}
+
 func basicRequestFunc(s *Server, w http.ResponseWriter, r *http.Request) *Request {
 
 	path := r.URL.Path
