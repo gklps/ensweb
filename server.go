@@ -14,7 +14,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-const ServerTimeout = 5 * time.Second
+const ServerTimeout = 60 * time.Second
 
 const (
 	DefaultTokenHdr  string = "X-Token"
