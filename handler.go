@@ -170,10 +170,11 @@ func basicHandleFunc(s *Server, hf HandlerFunc) http.Handler {
 		res := hf(req)
 		if res != nil && s.auditLog != nil {
 			timeDuration := time.Now().Nanosecond() - req.TimeIn.Nanosecond()
+			userAgent := r.Header.Get("User-Agent")
 			if res.Done {
-				s.auditLog.Info("HTTP request processed", "Path", req.Path, "IP Address", req.Connection.RemoteAddr, "Status", res.Status, "Duration", timeDuration)
+				s.auditLog.Info("HTTP request processed", "Path", req.Path, "IP Address", req.Connection.RemoteAddr, "Status", res.Status, "Duration", timeDuration, "User-Agent", userAgent)
 			} else {
-				s.auditLog.Error("HTTP request failed", "Path", req.Path, "IP Address", req.Connection.RemoteAddr, "Duration", timeDuration)
+				s.auditLog.Error("HTTP request failed", "Path", req.Path, "IP Address", req.Connection.RemoteAddr, "Duration", timeDuration, "User-Agent", userAgent)
 			}
 		}
 

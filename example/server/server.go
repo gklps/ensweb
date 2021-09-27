@@ -34,12 +34,12 @@ func NewServer(cfg *config.Config, log logger.Logger) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
-	logOptions := &logger.LoggerOptions{
-		Name:  "Audit",
-		Color: logger.AutoColor,
-	}
+	// logOptions := &logger.LoggerOptions{
+	// 	Name:  "Audit",
+	// 	Color: logger.AutoColor,
+	// }
 
-	auditLog := logger.New(logOptions)
+	auditLog := log.Named("audit")
 
 	m, err := NewModel(s.GetDB(), log)
 	s.m = m

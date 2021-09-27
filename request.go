@@ -110,7 +110,11 @@ func getIPAdress(r *http.Request) string {
 		// march from right to left until we get a public address
 		// that will be the address right before our proxy.
 		for i := len(addresses) - 1; i >= 0; i-- {
-			ip := strings.TrimSpace(addresses[i])
+			//ip := strings.TrimSpace(addresses[i])
+			ip, _, err := net.SplitHostPort(addresses[i])
+			if err != nil {
+				continue
+			}
 			// header can contain spaces too, strip those out.
 			realIP := net.ParseIP(ip)
 			if !realIP.IsGlobalUnicast() || isPrivateSubnet(realIP) {
