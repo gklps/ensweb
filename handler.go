@@ -10,6 +10,8 @@ import (
 	"mime"
 	"net/http"
 	"net/url"
+	"os"
+	"path"
 	"strings"
 	"time"
 
@@ -178,6 +180,26 @@ func basicHandleFunc(s *Server, hf HandlerFunc) http.Handler {
 			}
 		}
 
+	})
+}
+
+func indexRoute(s *Server, dirPath string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fs := http.FileServer(http.Dir(dirPath))
+		// If the requested file exists then return if; otherwise return index.html (fileserver default page)
+		if r.URL.Path != "/" {
+			fullPath := dirPath + strings.TrimPrefix(path.Clean(r.URL.Path), "/")
+			_, err := os.Stat(fullPath)
+			if err != nil {
+				if !os.IsNotExist(err) {
+					panic(err)
+				}
+				fmt.Printf("Not Found : %s\n", r.URL.Path)
+				// Requested file does not exist so we return the default (resolves to index.html)
+				r.URL.Path = "/"
+			}
+		}
+		fs.ServeHTTP(w, r)
 	})
 }
 

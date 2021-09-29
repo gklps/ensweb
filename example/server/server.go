@@ -61,7 +61,6 @@ func (s *Server) RegisterRoutes() {
 	// router.HandleFunc("/", s.Index)
 	// router.HandleFunc(LoginRoute, s.Login)
 	// router.HandleFunc(LoginSessionRoute, s.LoginSession)
-	//s.AddRoute("/", "GET", s.Index)
 	s.AddRoute(LoginRoute, "POST", s.Login)
 	s.AddRoute(LogoutRoute, "POST", s.SessionAuthHandle(&Token{}, s.Logout, nil))
 	s.AddRoute(RegisterRoute, "POST", s.Register)
