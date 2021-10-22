@@ -105,6 +105,7 @@ func isPrivateSubnet(ipAddress net.IP) bool {
 }
 
 func getIPAdress(r *http.Request) string {
+	privIP := ""
 	for _, h := range []string{"X-Forwarded-For", "X-Real-Ip"} {
 		addresses := strings.Split(r.Header.Get(h), ",")
 		// march from right to left until we get a public address
@@ -117,14 +118,17 @@ func getIPAdress(r *http.Request) string {
 			}
 			// header can contain spaces too, strip those out.
 			realIP := net.ParseIP(ip)
-			if !realIP.IsGlobalUnicast() || isPrivateSubnet(realIP) {
+			if !realIP.IsGlobalUnicast() {
+				continue
+			} else if isPrivateSubnet(realIP) {
 				// bad address, go to next
+				privIP = ip
 				continue
 			}
 			return ip
 		}
 	}
-	return ""
+	return privIP
 }
 
 // getConnection is used to format the connection information

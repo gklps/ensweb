@@ -228,3 +228,7 @@ func (s *Server) ParseFORM(req *Request) (map[string]interface{}, error) {
 	}
 	return formData, nil
 }
+
+func (s *Server) GetQuerry(req *Request, key string) string {
+	return req.r.URL.Query().Get(key)
+}
