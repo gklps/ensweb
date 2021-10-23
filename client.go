@@ -57,7 +57,7 @@ func NewClient(config *config.Config, log logger.Logger, th TokenHelper) (Client
 
 	tc := Client{
 		config:  config,
-		log:     log,
+		log:     log.Named("ensweb"),
 		address: address,
 		addr:    addr,
 		hc:      hc,
