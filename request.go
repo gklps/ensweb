@@ -11,6 +11,10 @@ import (
 	"github.com/EnsurityTechnologies/uuid"
 )
 
+const (
+	APIKeyHeader string = "X-API-Key"
+)
+
 // Operation is an enum that is used to specify the type
 // of request being made
 type Operation string
@@ -198,4 +202,8 @@ func getTokenFromReq(s *Server, r *http.Request) ClientToken {
 		}
 	}
 	return ClientToken{Token: "", BearerToken: false}
+}
+
+func (s *Server) GetReqHeader(req *Request, key string) string {
+	return req.r.Header.Get(key)
 }

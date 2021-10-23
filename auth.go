@@ -21,3 +21,16 @@ func (s *Server) BasicAuthHandle(claims jwt.Claims, hf HandlerFunc, ef HandlerFu
 		return hf(req)
 	})
 }
+
+func (s *Server) APIKeyAuthHandle(hf HandlerFunc, ef HandlerFunc) HandlerFunc {
+	return HandlerFunc(func(req *Request) *Result {
+		if s.apiKey != s.GetReqHeader(req, APIKeyHeader) {
+			if ef != nil {
+				return ef(req)
+			} else {
+				return s.RenderJSONError(req, http.StatusForbidden, "API Key is not matched", "API Key is not matched")
+			}
+		}
+		return hf(req)
+	})
+}

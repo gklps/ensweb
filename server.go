@@ -40,6 +40,7 @@ type Server struct {
 	jwtSecret  string
 	rootPath   string
 	publicPath string
+	apiKey     string
 	ss         map[string]*SessionStore
 	debugMode  bool
 }
@@ -98,6 +99,10 @@ func (s *Server) SetDebugMode() {
 
 func (s *Server) SetAuditLog(log logger.Logger) {
 	s.auditLog = log
+}
+
+func (s *Server) SetAPIKey(apiKey string) {
+	s.apiKey = apiKey
 }
 
 // Start starts the underlying HTTP server
