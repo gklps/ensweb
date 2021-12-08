@@ -126,7 +126,9 @@ func getIPAdress(r *http.Request) string {
 				continue
 			} else if isPrivateSubnet(realIP) {
 				// bad address, go to next
-				privIP = ip
+				if privIP == "" {
+					privIP = ip
+				}
 				continue
 			}
 			return ip

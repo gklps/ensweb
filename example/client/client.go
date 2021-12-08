@@ -12,8 +12,8 @@ import (
 
 // route declaration
 const (
-	LoginRoute        string = "/login"
-	LoginSessionRoute string = "/loginsession"
+	LoginRoute        string = "/api/login"
+	LoginSessionRoute string = "/api/loginsession"
 )
 
 type Client struct {

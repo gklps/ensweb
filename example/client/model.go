@@ -1,8 +1,8 @@
 package main
 
 type Request struct {
-	UserName string `json:"UserName"`
-	Password string `json:"Password"`
+	UserName string `json:"email"`
+	Password string `json:"password"`
 }
 
 type Response struct {
