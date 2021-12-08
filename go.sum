@@ -2,6 +2,8 @@ github.com/EnsurityTechnologies/adapter v0.0.0-20210920090052-8c923180e235 h1:Cs
 github.com/EnsurityTechnologies/adapter v0.0.0-20210920090052-8c923180e235/go.mod h1:nHt4KvL5rppQveU2oajbVf/fQeKyc1CKX/+T7BVfa0c=
 github.com/EnsurityTechnologies/config v0.0.0-20201030081144-37387bb31e98 h1:/tA5A5HAGwyGbYdd7X1eyaBnbfuTyGBKbH9otOFOjr8=
 github.com/EnsurityTechnologies/config v0.0.0-20201030081144-37387bb31e98/go.mod h1:vRtBaM24z38HlLoDIDsM9KCj6yoE6aUpx3dd+CLaodo=
+github.com/EnsurityTechnologies/config v0.0.0-20211122152017-a1352196a3f3 h1:O6q//TJV+aruZOeTtHmthTnRqKLcik8Smsll3+oLV7w=
+github.com/EnsurityTechnologies/config v0.0.0-20211122152017-a1352196a3f3/go.mod h1:vRtBaM24z38HlLoDIDsM9KCj6yoE6aUpx3dd+CLaodo=
 github.com/EnsurityTechnologies/helper v0.0.0-20210913155756-71d5d585b62d h1:vigaCSEif/Z7oVf30wowGBkbxqvCs44riii5NYlTpp4=
 github.com/EnsurityTechnologies/helper v0.0.0-20210913155756-71d5d585b62d/go.mod h1:KESBOBjgzlkimm3dDwr49wjbMXWtaoqrA3SiwhxGDwQ=
 github.com/EnsurityTechnologies/logger v0.0.0-20210607114953-381c7b36486d h1:HVZe/blo8PlYFg/YDZQCr7VAMbBy2T+oQ7nKWpLJ4aE=

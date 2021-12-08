@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/EnsurityTechnologies/adapter v0.0.0-20210920090052-8c923180e235
-	github.com/EnsurityTechnologies/config v0.0.0-20201030081144-37387bb31e98
+	github.com/EnsurityTechnologies/config v0.0.0-20211122152017-a1352196a3f3
 	github.com/EnsurityTechnologies/helper v0.0.0-20210913155756-71d5d585b62d
 	github.com/EnsurityTechnologies/logger v0.0.0-20210607114953-381c7b36486d
 	github.com/EnsurityTechnologies/uuid v0.0.0-20201030080551-27737c18713b
