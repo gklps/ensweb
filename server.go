@@ -71,10 +71,15 @@ func NewServer(cfg *config.Config, serverCfg *ServerConfig, log logger.Logger) (
 	} else {
 		serverURL = "https://" + addr
 	}
-
-	db, err := adapter.NewAdapter(cfg)
-	if err != nil {
-		return Server{}, err
+	slog := log.Named("ensweb")
+	var db *adapter.Adapter
+	var err error
+	if cfg.DBType != "" {
+		db, err = adapter.NewAdapter(cfg)
+		if err != nil {
+			slog.Error("failed to DB adapter", "err", err)
+			return Server{}, err
+		}
 	}
 
 	ts := Server{
@@ -82,7 +87,7 @@ func NewServer(cfg *config.Config, serverCfg *ServerConfig, log logger.Logger) (
 		cfg:        cfg,
 		serverCfg:  serverCfg,
 		mux:        mux.NewRouter(),
-		log:        log.Named("ensweb"),
+		log:        slog,
 		db:         db,
 		url:        serverURL,
 		rootPath:   "views/",
