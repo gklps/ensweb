@@ -17,19 +17,30 @@ import (
 
 // Client : Client struct
 type Client struct {
-	config  *config.Config
-	log     logger.Logger
-	address string
-	addr    *url.URL
-	hc      *http.Client
-	th      TokenHelper
-	token   string
+	config         *config.Config
+	log            logger.Logger
+	address        string
+	addr           *url.URL
+	hc             *http.Client
+	th             TokenHelper
+	defaultTimeout time.Duration
+	token          string
+}
+
+type ClientOptions = func(*Client) error
+
+func SetClientDefaultTimeout(timeout time.Duration) ClientOptions {
+	return func(c *Client) error {
+		c.defaultTimeout = timeout
+		return nil
+	}
 }
 
 // NewClient : Create new client handle
-func NewClient(config *config.Config, log logger.Logger, th TokenHelper) (Client, error) {
+func NewClient(config *config.Config, log logger.Logger, th TokenHelper, options ...ClientOptions) (Client, error) {
 	var address string
 	var tr *http.Transport
+	clog := log.Named("enswebclient")
 	if config.Production == "true" {
 		address = fmt.Sprintf("https://%s", net.JoinHostPort(config.ServerAddress, config.ServerPort))
 		tr = &http.Transport{
@@ -42,26 +53,33 @@ func NewClient(config *config.Config, log logger.Logger, th TokenHelper) (Client
 		}
 	}
 
-	timeout := time.Duration(ServerTimeout)
-
 	hc := &http.Client{
 		Transport: tr,
-		Timeout:   timeout,
+		Timeout:   DefaultTimeout,
 	}
 
 	addr, err := url.Parse(address)
 
 	if err != nil {
+		clog.Error("failed to parse server address", "err", err)
 		return Client{}, err
 	}
 
 	tc := Client{
 		config:  config,
-		log:     log.Named("ensweb"),
+		log:     clog,
 		address: address,
 		addr:    addr,
 		hc:      hc,
 		th:      th,
+	}
+
+	for _, op := range options {
+		err = op(&tc)
+		if err != nil {
+			clog.Error("failed in setting the option", "err", err)
+			return Client{}, err
+		}
 	}
 	return tc, nil
 }
@@ -96,7 +114,12 @@ func (c *Client) SetAuthorization(req *http.Request, token string) {
 	req.Header.Set("Authorization", bearer)
 }
 
-func (c *Client) Do(req *http.Request) (*http.Response, error) {
+func (c *Client) Do(req *http.Request, timeout ...time.Duration) (*http.Response, error) {
+	if timeout != nil {
+		c.hc.Timeout = timeout[0]
+	} else {
+		c.hc.Timeout = c.defaultTimeout
+	}
 	return c.hc.Do(req)
 }
 

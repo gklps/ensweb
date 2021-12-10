@@ -14,7 +14,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-const ServerTimeout = 60 * time.Second
+const DefaultTimeout = 60 * time.Second
 
 const (
 	DefaultTokenHdr  string = "X-Token"
@@ -54,16 +54,26 @@ type ErrMessage struct {
 	Error string `json:"Message"`
 }
 
+type ServerOptions = func(*Server) error
+
+func SetServerTimeout(timeout time.Duration) ServerOptions {
+	return func(s *Server) error {
+		s.s.ReadTimeout = timeout
+		s.s.WriteTimeout = timeout
+		return nil
+	}
+}
+
 // NewServer create new server instances
-func NewServer(cfg *config.Config, serverCfg *ServerConfig, log logger.Logger) (Server, error) {
+func NewServer(cfg *config.Config, serverCfg *ServerConfig, log logger.Logger, options ...ServerOptions) (Server, error) {
 	if os.Getenv("ASPNETCORE_PORT") != "" {
 		cfg.HostPort = os.Getenv("ASPNETCORE_PORT")
 	}
 	addr := net.JoinHostPort(cfg.HostAddress, cfg.HostPort)
 	s := &http.Server{
 		Addr:         addr,
-		ReadTimeout:  ServerTimeout,
-		WriteTimeout: ServerTimeout,
+		ReadTimeout:  DefaultTimeout,
+		WriteTimeout: DefaultTimeout,
 	}
 	var serverURL string
 	if cfg.Production == "false" {
@@ -71,7 +81,7 @@ func NewServer(cfg *config.Config, serverCfg *ServerConfig, log logger.Logger) (
 	} else {
 		serverURL = "https://" + addr
 	}
-	slog := log.Named("ensweb")
+	slog := log.Named("enswebserver")
 	var db *adapter.Adapter
 	var err error
 	if cfg.DBType != "" {
@@ -93,6 +103,14 @@ func NewServer(cfg *config.Config, serverCfg *ServerConfig, log logger.Logger) (
 		rootPath:   "views/",
 		publicPath: "public/",
 		ss:         make(map[string]*SessionStore),
+	}
+
+	for _, op := range options {
+		err = op(&ts)
+		if err != nil {
+			slog.Error("failed in setting the option", "err", err)
+			return Server{}, err
+		}
 	}
 
 	return ts, nil
@@ -125,7 +143,7 @@ func (s *Server) Start() error {
 
 // Shutdown attempts to gracefully shutdown the underlying HTTP server.
 func (s *Server) Shutdown() error {
-	ctx, cancel := context.WithTimeout(context.Background(), ServerTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
 	defer cancel()
 	return s.s.Shutdown(ctx)
 }
