@@ -1,12 +1,16 @@
 package ensweb
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"html/template"
 	"io"
+	"io/ioutil"
+	"mime/multipart"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 )
 
@@ -117,5 +121,54 @@ func (s *Server) RenderFile(req *Request, fileName string, attachment bool) *Res
 		http.ServeFile(req.w, req.r, fileName)
 	}
 
+	return res
+}
+
+func (s *Server) RenderMultiFormFile(req *Request, field map[string]string, fileName map[string]string) *Result {
+
+	if s.debugMode {
+		enableCors(&req.w)
+	}
+
+	res := &Result{
+		Status: http.StatusOK,
+		Done:   true,
+	}
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+
+	for k, v := range field {
+		writer.WriteField(k, v)
+	}
+
+	for k, v := range fileName {
+
+		f, err := os.Open(v)
+		if err != nil {
+			return s.RenderJSON(req, nil, http.StatusInternalServerError)
+		}
+		defer f.Close()
+
+		part, err := writer.CreateFormFile(k, filepath.Base(v))
+		if err != nil {
+			return s.RenderJSON(req, nil, http.StatusInternalServerError)
+		}
+		_, err = io.Copy(part, f)
+		if err != nil {
+			return s.RenderJSON(req, nil, http.StatusInternalServerError)
+		}
+	}
+	err := writer.Close()
+	if err != nil {
+		return s.RenderJSON(req, nil, http.StatusInternalServerError)
+	}
+	req.w.Header().Set("Content-Type", writer.FormDataContentType())
+	req.w.WriteHeader(http.StatusOK)
+	wrData, err := ioutil.ReadAll(body)
+	if err != nil {
+		return s.RenderJSON(req, nil, http.StatusInternalServerError)
+	}
+	req.w.Write(wrData)
 	return res
 }
