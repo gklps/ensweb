@@ -36,8 +36,19 @@ func SetClientDefaultTimeout(timeout time.Duration) ClientOptions {
 	}
 }
 
+func SetClientTokenHelper(filename string) ClientOptions {
+	return func(c *Client) error {
+		th, err := NewInternalTokenHelper(filename)
+		if err != nil {
+			return err
+		}
+		c.th = th
+		return nil
+	}
+}
+
 // NewClient : Create new client handle
-func NewClient(config *config.Config, log logger.Logger, th TokenHelper, options ...ClientOptions) (Client, error) {
+func NewClient(config *config.Config, log logger.Logger, options ...ClientOptions) (Client, error) {
 	var address string
 	var tr *http.Transport
 	clog := log.Named("enswebclient")
@@ -71,7 +82,6 @@ func NewClient(config *config.Config, log logger.Logger, th TokenHelper, options
 		address: address,
 		addr:    addr,
 		hc:      hc,
-		th:      th,
 	}
 
 	for _, op := range options {
