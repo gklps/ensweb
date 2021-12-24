@@ -5,10 +5,17 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"mime"
+	"mime/multipart"
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"path"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/EnsurityTechnologies/config"
@@ -25,6 +32,7 @@ type Client struct {
 	th             TokenHelper
 	defaultTimeout time.Duration
 	token          string
+	cookies        []*http.Cookie
 }
 
 type ClientOptions = func(*Client) error
@@ -116,6 +124,52 @@ func (c *Client) JSONRequest(method string, requestPath string, model interface{
 	req.URL.User = url.User
 	req.URL.Scheme = url.Scheme
 	req.URL.Host = url.Host
+	req.Header.Set("Content-Type", "application/json")
+	return req, err
+}
+
+func (c *Client) MultiFormRequest(method string, requestPath string, field map[string]string, files map[string]string) (*http.Request, error) {
+	var b bytes.Buffer
+	w := multipart.NewWriter(&b)
+	for k, v := range field {
+		fw, err := w.CreateFormField(k)
+		if err != nil {
+			return nil, err
+		}
+		if _, err = io.Copy(fw, strings.NewReader(v)); err != nil {
+			return nil, err
+		}
+	}
+	for k, v := range files {
+		fw, err := w.CreateFormFile(k, filepath.Base(v))
+		if err != nil {
+			return nil, err
+		}
+		f, err := os.Open(v)
+		if err != nil {
+			return nil, err
+		}
+		if _, err = io.Copy(fw, f); err != nil {
+			return nil, err
+		}
+	}
+	err := w.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	url := &url.URL{
+		Scheme: c.addr.Scheme,
+		Host:   c.addr.Host,
+		User:   c.addr.User,
+		Path:   path.Join(c.addr.Path, requestPath),
+	}
+	req, err := http.NewRequest(method, url.RequestURI(), &b)
+	req.Header.Set("Content-Type", w.FormDataContentType())
+	req.Host = url.Host
+	req.URL.User = url.User
+	req.URL.Scheme = url.Scheme
+	req.URL.Host = url.Host
 	return req, err
 }
 
@@ -131,6 +185,14 @@ func (c *Client) Do(req *http.Request, timeout ...time.Duration) (*http.Response
 		c.hc.Timeout = c.defaultTimeout
 	}
 	return c.hc.Do(req)
+}
+
+func (c *Client) SetCookies(cookies []*http.Cookie) {
+	c.cookies = cookies
+}
+
+func (c *Client) GetCookies() []*http.Cookie {
+	return c.cookies
 }
 
 func (c *Client) SetToken(token string) error {
@@ -151,4 +213,47 @@ func (c *Client) GetToken() string {
 		}
 	}
 	return c.token
+}
+
+func (c *Client) ParseMutilform(resp *http.Response, dirPath string) ([]string, map[string]string, error) {
+	mediatype, params, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
+	if err != nil {
+		return nil, nil, err
+	}
+	if mediatype != "multipart/form-data" {
+		return nil, nil, fmt.Errorf("invalid content type %s", mediatype)
+	}
+	defer resp.Body.Close()
+	mr := multipart.NewReader(resp.Body, params["boundary"])
+
+	paramFiles := make([]string, 0)
+	paramTexts := make(map[string]string)
+	for {
+		part, err := mr.NextPart()
+		if err != nil {
+			if err != io.EOF { //io.EOF error means reading is complete
+				return paramFiles, paramTexts, fmt.Errorf(" error reading multipart request: %+v", err)
+			}
+			break
+		}
+		if part.FileName() != "" {
+			f, err := os.Create(dirPath + part.FileName())
+			if err != nil {
+				return paramFiles, paramTexts, fmt.Errorf("error in creating file %+v", err)
+			}
+			value, _ := ioutil.ReadAll(part)
+			f.Write(value)
+			f.Close()
+			if err != nil {
+				return paramFiles, paramTexts, fmt.Errorf("error reading file param %+v", err)
+			}
+			paramFiles = append(paramFiles, dirPath+part.FileName())
+		} else {
+			name := part.FormName()
+			buf := new(bytes.Buffer)
+			buf.ReadFrom(part)
+			paramTexts[name] = buf.String()
+		}
+	}
+	return paramFiles, paramTexts, nil
 }

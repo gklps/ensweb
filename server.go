@@ -25,6 +25,14 @@ const (
 	JSONContentType string = "application/json"
 )
 
+const (
+	StatusSuccess string = "Success"
+	StatusFailed  string = "Failed"
+	StatusError   string = "Error"
+	StatusBusy    string = "Busy"
+	StatusNone    string = "None"
+)
+
 type HandlerFunc func(req *Request) *Result
 
 // Server defines server
@@ -52,6 +60,11 @@ type ServerConfig struct {
 
 type ErrMessage struct {
 	Error string `json:"Message"`
+}
+
+type StatusMsg struct {
+	Status  string `json:"Status"`
+	Message string `json:"Message"`
 }
 
 type ServerOptions = func(*Server) error

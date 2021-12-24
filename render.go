@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -50,6 +49,17 @@ func (s *Server) RenderJSONError(req *Request, status int, errMsg string, logMsg
 		Error: errMsg,
 	}
 	return s.RenderJSON(req, model, status)
+}
+
+func (s *Server) RenderJSONStatus(req *Request, status string, message string, logMsg string, args ...interface{}) *Result {
+	if logMsg != "" {
+		s.log.Error(logMsg, args...)
+	}
+	model := StatusMsg{
+		Status:  status,
+		Message: message,
+	}
+	return s.RenderJSON(req, model, http.StatusOK)
 }
 
 func (s *Server) RenderTemplate(req *Request, renderPath string, model interface{}, status int) *Result {
@@ -135,11 +145,13 @@ func (s *Server) RenderMultiFormFile(req *Request, field map[string]string, file
 		Done:   true,
 	}
 
-	body := &bytes.Buffer{}
+	body := new(bytes.Buffer)
+
 	writer := multipart.NewWriter(body)
 
 	for k, v := range field {
-		writer.WriteField(k, v)
+		wr, _ := writer.CreateFormField(k)
+		wr.Write([]byte(v))
 	}
 
 	for k, v := range fileName {
@@ -165,10 +177,10 @@ func (s *Server) RenderMultiFormFile(req *Request, field map[string]string, file
 	}
 	req.w.Header().Set("Content-Type", writer.FormDataContentType())
 	req.w.WriteHeader(http.StatusOK)
-	wrData, err := ioutil.ReadAll(body)
-	if err != nil {
-		return s.RenderJSON(req, nil, http.StatusInternalServerError)
-	}
-	req.w.Write(wrData)
+	// wrData, err := ioutil.ReadAll(body)
+	// if err != nil {
+	// 	return s.RenderJSON(req, nil, http.StatusInternalServerError)
+	// }
+	req.w.Write(body.Bytes())
 	return res
 }

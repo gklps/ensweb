@@ -8,7 +8,6 @@ import (
 	"io"
 	"io/ioutil"
 	"mime"
-	"mime/multipart"
 	"net/http"
 	"net/url"
 	"os"
@@ -236,8 +235,8 @@ func (s *Server) GetQuerry(req *Request, key string) string {
 	return req.r.URL.Query().Get(key)
 }
 
-func (s *Server) ParseMultiPartForm(req *Request, dirPath string) ([]string, map[string]string, error) {
-	mediatype, params, err := mime.ParseMediaType(req.r.Header.Get("Content-Type"))
+func (s *Server) ParseMultiPartForm(req *Request, dirPath string) ([]string, map[string][]string, error) {
+	mediatype, _, err := mime.ParseMediaType(req.r.Header.Get("Content-Type"))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -245,48 +244,90 @@ func (s *Server) ParseMultiPartForm(req *Request, dirPath string) ([]string, map
 		return nil, nil, fmt.Errorf("invalid content type")
 	}
 	defer req.r.Body.Close()
-	mr := multipart.NewReader(req.r.Body, params["boundary"])
 
+	req.r.ParseMultipartForm(52428800)
 	paramFiles := make([]string, 0)
-	paramTexts := make(map[string]string)
-	for {
-		part, err := mr.NextPart()
-		if err != nil {
-			if err != io.EOF { //io.EOF error means reading is complete
-				return paramFiles, paramTexts, fmt.Errorf(" error reading multipart request: %+v", err)
-			}
-			break
-		}
-
-		if part.FileName() != "" {
-			chunk := make([]byte, 4096)
-			f, err := os.OpenFile(dirPath+part.FileName(), os.O_WRONLY|os.O_CREATE, 0666)
-			if err != nil {
-				return paramFiles, paramTexts, fmt.Errorf("error in creating file %+v", err)
-			}
-			for {
-				n, err := part.Read(chunk)
-				if err != nil {
-					if err != io.EOF {
-						return paramFiles, paramTexts, fmt.Errorf(" error reading multipart file %+v", err)
-					}
-					f.Write(chunk[:n])
-					break
-				} else {
-					f.Write(chunk)
-				}
-			}
-			f.Close()
-			if err != nil {
-				return paramFiles, paramTexts, fmt.Errorf("error reading file param %+v", err)
-			}
-			paramFiles = append(paramFiles, dirPath+part.FileName())
-		} else {
-			name := part.FormName()
-			buf := new(bytes.Buffer)
-			buf.ReadFrom(part)
-			paramTexts[name] = buf.String()
-		}
+	paramTexts := make(map[string][]string)
+	for k, v := range req.r.MultipartForm.Value {
+		paramTexts[k] = append(paramTexts[k], v...)
 	}
+
+	for k, _ := range req.r.MultipartForm.File {
+		file, fileHeader, err := req.r.FormFile(k)
+		if err != nil {
+			return nil, nil, fmt.Errorf("invalid form file")
+		}
+		defer file.Close()
+		localFileName := dirPath + fileHeader.Filename
+		out, err := os.Create(localFileName)
+		if err != nil {
+			return nil, nil, fmt.Errorf("faile to open file")
+		}
+		defer out.Close()
+		_, err = io.Copy(out, file)
+		if err != nil {
+			return nil, nil, fmt.Errorf("faile to copy file")
+		}
+		paramFiles = append(paramFiles, localFileName)
+	}
+
 	return paramFiles, paramTexts, nil
 }
+
+// func (s *Server) ParseMultiPartForm(req *Request, dirPath string) ([]string, map[string]string, error) {
+// 	mediatype, params, err := mime.ParseMediaType(req.r.Header.Get("Content-Type"))
+// 	if err != nil {
+// 		return nil, nil, err
+// 	}
+// 	if mediatype != "multipart/form-data" {
+// 		return nil, nil, fmt.Errorf("invalid content type")
+// 	}
+// 	defer req.r.Body.Close()
+// 	mr := multipart.NewReader(req.r.Body, params["boundary"])
+
+// 	paramFiles := make([]string, 0)
+// 	paramTexts := make(map[string]string)
+// 	for {
+// 		part, err := mr.NextPart()
+// 		if err != nil {
+// 			if err != io.EOF { //io.EOF error means reading is complete
+// 				return paramFiles, paramTexts, fmt.Errorf(" error reading multipart request: %+v", err)
+// 			}
+// 			break
+// 		}
+// 		if part.FileName() != "" {
+// 			chunk := make([]byte, 4096)
+// 			f, err := os.OpenFile(dirPath+part.FileName(), os.O_WRONLY|os.O_CREATE, 0666)
+// 			if err != nil {
+// 				return paramFiles, paramTexts, fmt.Errorf("error in creating file %+v", err)
+// 			}
+// 			for {
+// 				n, err := part.Read(chunk)
+// 				if err != nil {
+// 					if err != io.EOF {
+// 						return paramFiles, paramTexts, fmt.Errorf(" error reading multipart file %+v", err)
+// 					}
+// 					if n > 0 {
+// 						f.Write(chunk[:n])
+// 					}
+// 					break
+// 				} else {
+// 					if n > 0 {
+// 						f.Write(chunk[:n])
+// 					}
+// 				}
+// 			}
+// 			f.Close()
+// 			if err != nil {
+// 				return paramFiles, paramTexts, fmt.Errorf("error reading file param %+v", err)
+// 			}
+// 			paramFiles = append(paramFiles, dirPath+part.FileName())
+// 		} else {
+// 			name := part.FormName()
+// 			buf := new(bytes.Buffer)
+// 			buf.ReadFrom(part)
+// 			paramTexts[name] = buf.String()
+// 		}
+// 	}
+// 	return paramFiles, paramTexts, nil
+// }

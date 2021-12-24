@@ -62,32 +62,14 @@ func (s *Server) RegisterRoutes() {
 	// router.HandleFunc(LoginRoute, s.Login)
 	// router.HandleFunc(LoginSessionRoute, s.LoginSession)
 	s.AddRoute(LoginRoute, "POST", s.Login)
-	s.AddRoute(LogoutRoute, "POST", s.SessionAuthHandle(&Token{}, s.Logout, nil))
+	s.AddRoute(LogoutRoute, "POST", s.SessionAuthHandle(&Token{}, "token-store", "token", s.Logout, nil))
 	s.AddRoute(RegisterRoute, "POST", s.Register)
-	s.AddRoute(HomeRoute, "GET", s.SessionAuthHandle(&Token{}, s.LoginSession, nil))
+	s.AddRoute(HomeRoute, "GET", s.SessionAuthHandle(&Token{}, "token-store", "token", s.LoginSession, nil))
 	s.SetStatic("./ui/build/")
 }
 
 func (s *Server) Index(req *ensweb.Request) *ensweb.Result {
 	return s.RenderTemplate(req, "index", nil, http.StatusOK)
-}
-
-func (s *Server) SessionAuthHandle(claims jwt.Claims, hf ensweb.HandlerFunc, ef ensweb.HandlerFunc) ensweb.HandlerFunc {
-	return ensweb.HandlerFunc(func(req *ensweb.Request) *ensweb.Result {
-
-		token := s.GetSessionCookies(req, "token-store", "token")
-		err := s.ValidateJWTToken(token.(string), claims)
-		if err != nil {
-			if ef != nil {
-				return ef(req)
-			} else {
-				return s.RenderJSONError(req, http.StatusForbidden, err.Error(), err.Error())
-			}
-		}
-		req.ClientToken.Model = claims
-		req.ClientToken.Verified = true
-		return hf(req)
-	})
 }
 
 func (s *Server) Login(req *ensweb.Request) *ensweb.Result {
