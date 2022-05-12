@@ -259,7 +259,7 @@ func (s *Server) ParseMultiPartForm(req *Request, dirPath string) ([]string, map
 		}
 		defer file.Close()
 		localFileName := dirPath + fileHeader.Filename
-		out, err := os.Create(localFileName)
+		out, err := os.OpenFile(localFileName, os.O_CREATE|os.O_RDWR, 0777)
 		if err != nil {
 			return nil, nil, fmt.Errorf("faile to open file")
 		}

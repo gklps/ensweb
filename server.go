@@ -34,6 +34,7 @@ const (
 )
 
 type HandlerFunc func(req *Request) *Result
+type ShutdownFunc func() error
 
 // Server defines server
 type Server struct {
@@ -51,6 +52,7 @@ type Server struct {
 	apiKey     string
 	ss         map[string]*SessionStore
 	debugMode  bool
+	sf         ShutdownFunc
 }
 
 type ServerConfig struct {
@@ -150,14 +152,26 @@ func (s *Server) Start() error {
 		go s.s.ListenAndServeTLS(s.cfg.CertFile, s.cfg.KeyFile)
 		return nil
 	} else {
-		return s.s.ListenAndServe()
+		go s.s.ListenAndServe()
+		return nil
 	}
+}
+
+func (s *Server) SetShutdown(sf ShutdownFunc) {
+	s.sf = sf
 }
 
 // Shutdown attempts to gracefully shutdown the underlying HTTP server.
 func (s *Server) Shutdown() error {
 	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
 	defer cancel()
+	var err error
+	if s.sf != nil {
+		err = s.sf()
+		if err != nil {
+			return err
+		}
+	}
 	return s.s.Shutdown(ctx)
 }
 
