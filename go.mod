@@ -19,4 +19,6 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/natefinch/atomic v1.0.1
 	github.com/pierrec/lz4 v2.6.1+incompatible // indirect
+	github.com/swaggo/http-swagger v1.3.0 // indirect
+	github.com/swaggo/swag v1.8.3 // indirect
 )

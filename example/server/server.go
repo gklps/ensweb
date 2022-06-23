@@ -40,10 +40,10 @@ func NewServer(cfg *config.Config, log logger.Logger) (*Server, error) {
 	// }
 
 	auditLog := log.Named("audit")
-
 	m, err := NewModel(s.GetDB(), log)
 	s.m = m
 	s.log = log.Named("exampleserver")
+	s.EnableSWagger("ENSWEB Server Example", "This is the exxample server for ensweb framework", "1.0")
 	s.SetAuditLog(auditLog)
 	s.CreateSessionStore("token-store", "HaiHello", sessions.Options{Path: "/api", HttpOnly: true})
 	s.SetDebugMode()
@@ -72,6 +72,17 @@ func (s *Server) Index(req *ensweb.Request) *ensweb.Result {
 	return s.RenderTemplate(req, "index", nil, http.StatusOK)
 }
 
+// ShowAccount godoc
+// @Summary      Login into account
+// @Description  login in the dashboard
+// @Tags         accounts
+// @Accept       json
+// @Produce      json
+// @Param        login   body      Request  true  "Login Credential"
+// @Success      200  {object}  Response
+// @Failure      400 {object}  ensweb.ErrMessage
+// @Failure      401 {object}  ensweb.ErrMessage
+// @Router       /api/login [post]
 func (s *Server) Login(req *ensweb.Request) *ensweb.Result {
 	var request Request
 	err := s.ParseJSON(req, &request)
@@ -107,6 +118,15 @@ func (s *Server) Login(req *ensweb.Request) *ensweb.Result {
 	return s.RenderJSON(req, response, http.StatusOK)
 }
 
+// ShowAccount godoc
+// @Summary      Logout from the session
+// @Description  Logout from the session
+// @Tags         accounts
+// @Accept       json
+// @Produce      json
+// @Success      200
+// @Failure      507 {object}  ensweb.ErrMessage
+// @Router       /api/logout [post]
 func (s *Server) Logout(req *ensweb.Request) *ensweb.Result {
 
 	err := s.EmptySessionCookies(req, "token-store")
@@ -119,6 +139,17 @@ func (s *Server) Logout(req *ensweb.Request) *ensweb.Result {
 
 }
 
+// ShowAccount godoc
+// @Summary      Register new user account
+// @Description  Register new account on the dashboard
+// @Tags         accounts
+// @Accept       json
+// @Produce      json
+// @Param        Request   body      Request  true  "User email & Password"
+// @Success      200  {object}  Response
+// @Failure      400 {object}  ensweb.ErrMessage
+// @Failure      401 {object}  ensweb.ErrMessage
+// @Router       /api/register [post]
 func (s *Server) Register(req *ensweb.Request) *ensweb.Result {
 	var request Request
 	isForm, err := s.IsFORM(req)
@@ -173,6 +204,15 @@ func (s *Server) Register(req *ensweb.Request) *ensweb.Result {
 	return s.RenderJSON(req, response, http.StatusOK)
 }
 
+// ShowAccount godoc
+// @Summary      Login Session
+// @Description  Login session in the dashbaord
+// @Tags         accounts
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  Response
+// @Failure      401 {object}  ensweb.ErrMessage
+// @Router       /api/home [get]
 func (s *Server) LoginSession(req *ensweb.Request) *ensweb.Result {
 	if !req.ClientToken.Verified {
 		return s.RenderJSONError(req, http.StatusUnauthorized, "Invalid token", "Invalid token")

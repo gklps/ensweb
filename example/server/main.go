@@ -6,6 +6,8 @@ import (
 	"syscall"
 
 	"github.com/EnsurityTechnologies/config"
+	_ "github.com/EnsurityTechnologies/ensweb"
+	_ "github.com/EnsurityTechnologies/ensweb/example/server/docs"
 	"github.com/EnsurityTechnologies/logger"
 )
 

@@ -60,6 +60,7 @@ type ServerConfig struct {
 	RawErrHeaderName string
 }
 
+// ErrMessage example
 type ErrMessage struct {
 	Error string `json:"Message"`
 }
@@ -178,4 +179,9 @@ func (s *Server) Shutdown() error {
 // GetDB will return DB
 func (s *Server) GetDB() *adapter.Adapter {
 	return s.db
+}
+
+// GetDB will return DB
+func (s *Server) GetServerURL() string {
+	return s.url
 }
