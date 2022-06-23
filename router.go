@@ -2,10 +2,7 @@ package ensweb
 
 import (
 	"net/http"
-	"strings"
 
-	"github.com/EnsurityTechnologies/ensweb/example/server/docs"
-	_ "github.com/EnsurityTechnologies/ensweb/example/server/docs"
 	"github.com/gorilla/mux"
 	httpSwagger "github.com/swaggo/http-swagger"
 )
@@ -19,18 +16,7 @@ func (s *Server) AddRoute(path string, method string, hf HandlerFunc) {
 }
 
 func (s *Server) EnableSWagger(title string, description string, version string) {
-	url := s.GetServerURL()
-	if strings.HasPrefix(url, "http://") {
-		url = strings.TrimLeft(url, "http://")
-	} else if strings.HasPrefix(url, "https://") {
-		url = strings.TrimLeft(url, "https://")
-	}
-	docs.SwaggerInfo.Title = title
-	docs.SwaggerInfo.Description = description
-	docs.SwaggerInfo.Version = version
-	docs.SwaggerInfo.Host = url
-	docs.SwaggerInfo.BasePath = ""
-	docs.SwaggerInfo.Schemes = []string{"http", "https"}
+
 	s.mux.PathPrefix("/swagger/").Handler(httpSwagger.Handler(
 		httpSwagger.URL(s.GetServerURL()+"/swagger/doc.json"),
 		httpSwagger.DeepLinking(true),

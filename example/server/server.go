@@ -2,10 +2,12 @@ package main
 
 import (
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/EnsurityTechnologies/config"
 	"github.com/EnsurityTechnologies/ensweb"
+	"github.com/EnsurityTechnologies/ensweb/example/server/docs"
 	"github.com/EnsurityTechnologies/logger"
 	"github.com/EnsurityTechnologies/uuid"
 	"github.com/dgrijalva/jwt-go"
@@ -38,7 +40,18 @@ func NewServer(cfg *config.Config, log logger.Logger) (*Server, error) {
 	// 	Name:  "Audit",
 	// 	Color: logger.AutoColor,
 	// }
-
+	url := s.GetServerURL()
+	if strings.HasPrefix(url, "http://") {
+		url = strings.TrimLeft(url, "http://")
+	} else if strings.HasPrefix(url, "https://") {
+		url = strings.TrimLeft(url, "https://")
+	}
+	docs.SwaggerInfo.Title = "ENSWEB Server Example"
+	docs.SwaggerInfo.Description = "This is example for ensweb server framework"
+	docs.SwaggerInfo.Version = "1.0"
+	docs.SwaggerInfo.Host = url
+	docs.SwaggerInfo.BasePath = ""
+	docs.SwaggerInfo.Schemes = []string{"http", "https"}
 	auditLog := log.Named("audit")
 	m, err := NewModel(s.GetDB(), log)
 	s.m = m
