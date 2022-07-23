@@ -6,7 +6,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 )
 
-func (s *Server) BasicAuthHandle(claims jwt.Claims, hf HandlerFunc, ef HandlerFunc) HandlerFunc {
+func (s *Server) BasicAuthHandle(claims jwt.Claims, hf HandlerFunc, af AuthFunc, ef HandlerFunc) HandlerFunc {
 	return HandlerFunc(func(req *Request) *Result {
 		err := s.ValidateJWTToken(req.ClientToken.Token, claims)
 		if err != nil {
@@ -18,6 +18,15 @@ func (s *Server) BasicAuthHandle(claims jwt.Claims, hf HandlerFunc, ef HandlerFu
 		}
 		req.ClientToken.Model = claims
 		req.ClientToken.Verified = true
+		if af != nil {
+			if !af(req) {
+				if ef != nil {
+					return ef(req)
+				} else {
+					return s.RenderJSONError(req, http.StatusForbidden, "Access denined", "Access denied")
+				}
+			}
+		}
 		return hf(req)
 	})
 }

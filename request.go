@@ -31,6 +31,7 @@ type Request struct {
 	Data        map[string]interface{} `json:"data" structs:"data" mapstructure:"data"`
 	Model       interface{}
 	Headers     http.Header
+	TenantID    uuid.UUID
 	r           *http.Request
 	w           http.ResponseWriter `json:"-" sentinel:""`
 }
@@ -160,6 +161,11 @@ func (req *Request) GetHTTPRequest() *http.Request {
 	return req.r
 }
 
+func (s *Server) getTenantID(r *http.Request) uuid.UUID {
+	// ::TODO to be addressed
+	return s.defaultTenantID
+}
+
 func basicRequestFunc(s *Server, w http.ResponseWriter, r *http.Request) *Request {
 
 	path := r.URL.Path
@@ -174,6 +180,7 @@ func basicRequestFunc(s *Server, w http.ResponseWriter, r *http.Request) *Reques
 		ClientToken: getTokenFromReq(s, r),
 		Connection:  getConnection(r),
 		Headers:     r.Header,
+		TenantID:    s.getTenantID(r),
 		r:           r,
 		w:           w,
 	}

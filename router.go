@@ -15,10 +15,10 @@ func (s *Server) AddRoute(path string, method string, hf HandlerFunc) {
 	s.mux.Handle(path, basicHandleFunc(s, hf)).Methods(method)
 }
 
-func (s *Server) EnableSWagger(title string, description string, version string) {
+func (s *Server) EnableSWagger(url string) {
 
 	s.mux.PathPrefix("/swagger/").Handler(httpSwagger.Handler(
-		httpSwagger.URL(s.GetServerURL()+"/swagger/doc.json"),
+		httpSwagger.URL(url+"/swagger/doc.json"),
 		httpSwagger.DeepLinking(true),
 		httpSwagger.DocExpansion("none"),
 		httpSwagger.DomID("swagger-ui"))).Methods(http.MethodGet)

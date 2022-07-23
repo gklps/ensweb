@@ -201,8 +201,17 @@ func indexRoute(s *Server, dirPath string) http.Handler {
 				r.URL.Path = "/"
 			}
 		}
+
+		if s.debugMode {
+			enableCors(&w)
+		}
+
 		fs.ServeHTTP(w, r)
 	})
+}
+
+func (s *Server) AddExtension(fileExtension string, fileType string) {
+	mime.AddExtensionType(fileExtension, fileType)
 }
 
 func (s *Server) IsFORM(req *Request) (bool, error) {

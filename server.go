@@ -11,6 +11,7 @@ import (
 	"github.com/EnsurityTechnologies/adapter"
 	"github.com/EnsurityTechnologies/config"
 	"github.com/EnsurityTechnologies/logger"
+	"github.com/EnsurityTechnologies/uuid"
 	"github.com/gorilla/mux"
 )
 
@@ -34,25 +35,29 @@ const (
 )
 
 type HandlerFunc func(req *Request) *Result
+type AuthFunc func(req *Request) bool
 type ShutdownFunc func() error
 
 // Server defines server
 type Server struct {
-	cfg        *config.Config
-	serverCfg  *ServerConfig
-	s          *http.Server
-	mux        *mux.Router
-	log        logger.Logger
-	auditLog   logger.Logger
-	db         *adapter.Adapter
-	url        string
-	jwtSecret  string
-	rootPath   string
-	publicPath string
-	apiKey     string
-	ss         map[string]*SessionStore
-	debugMode  bool
-	sf         ShutdownFunc
+	cfg             *config.Config
+	serverCfg       *ServerConfig
+	s               *http.Server
+	mux             *mux.Router
+	log             logger.Logger
+	auditLog        logger.Logger
+	db              *adapter.Adapter
+	url             string
+	jwtSecret       string
+	rootPath        string
+	publicPath      string
+	apiKey          string
+	ss              map[string]*SessionStore
+	debugMode       bool
+	sf              ShutdownFunc
+	entities        map[string]Entity
+	entityConfig    EntityConfig
+	defaultTenantID uuid.UUID
 }
 
 type ServerConfig struct {
@@ -119,6 +124,16 @@ func NewServer(cfg *config.Config, serverCfg *ServerConfig, log logger.Logger, o
 		rootPath:   "views/",
 		publicPath: "public/",
 		ss:         make(map[string]*SessionStore),
+		entities:   make(map[string]Entity),
+		entityConfig: EntityConfig{
+			DefaultTenantName:    "ensweb",
+			DefaultAdminName:     "Admin",
+			DefaultAdminPassword: "admin@123",
+			TenantTableName:      "TenantTable",
+			UserTableName:        "UserTable",
+			RoleTableName:        "RoleTable",
+			UserRoleTableName:    "UserRoleTable",
+		},
 	}
 
 	for _, op := range options {
@@ -174,6 +189,10 @@ func (s *Server) Shutdown() error {
 		}
 	}
 	return s.s.Shutdown(ctx)
+}
+
+func (s *Server) SetDefaultTenant(id uuid.UUID) {
+	s.defaultTenantID = id
 }
 
 // GetDB will return DB

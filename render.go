@@ -15,6 +15,8 @@ import (
 
 func enableCors(w *http.ResponseWriter) {
 	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+	(*w).Header().Set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
+	(*w).Header().Set("Access-Control-Allow-Headers", "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With")
 }
 
 func (s *Server) RenderJSON(req *Request, model interface{}, status int) *Result {
@@ -182,5 +184,28 @@ func (s *Server) RenderMultiFormFile(req *Request, field map[string]string, file
 	// 	return s.RenderJSON(req, nil, http.StatusInternalServerError)
 	// }
 	req.w.Write(body.Bytes())
+	return res
+}
+
+func (s *Server) RenderImage(req *Request, contentType string, img string) *Result {
+
+	if s.debugMode {
+		enableCors(&req.w)
+	}
+	req.w.Header().Set("Content-Type", contentType)
+
+	res := &Result{
+		Status: http.StatusOK,
+		Done:   true,
+	}
+	req.w.WriteHeader(http.StatusOK)
+
+	str := "data:" + contentType + ";base64," + img
+	f, _ := os.Create("test.txt")
+	f.WriteString(str)
+	f.Close()
+
+	fmt.Printf("Length : %d\n", len(str))
+	req.w.Write([]byte(str))
 	return res
 }

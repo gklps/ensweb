@@ -5,6 +5,7 @@ go 1.16
 require (
 	github.com/EnsurityTechnologies/adapter v1.0.2
 	github.com/EnsurityTechnologies/config v1.0.0
+	github.com/EnsurityTechnologies/enscrypt v1.0.0 // indirect
 	github.com/EnsurityTechnologies/helper v1.0.0
 	github.com/EnsurityTechnologies/logger v1.0.0
 	github.com/EnsurityTechnologies/uuid v1.0.0
@@ -20,6 +21,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/sessions v1.2.1
 	github.com/jinzhu/gorm v1.9.16
+	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/mitchellh/go-homedir v1.1.0
@@ -31,4 +33,5 @@ require (
 	golang.org/x/net v0.0.0-20220622184535-263ec571b305 // indirect
 	golang.org/x/sys v0.0.0-20220622161953-175b2fd9d664 // indirect
 	golang.org/x/tools v0.1.11 // indirect
+	gorm.io/gorm v1.23.8 // indirect
 )
