@@ -23,11 +23,11 @@ type Client struct {
 func NewClient(cfg *config.Config, log logger.Logger) (*Client, error) {
 	c := &Client{}
 	var err error
-	th, err := ensweb.NewInternalTokenHelper("token.txt")
-	if err != nil {
-		return nil, err
-	}
-	c.Client, err = ensweb.NewClient(cfg, log, th)
+	// th, err := ensweb.NewInternalTokenHelper("token.txt")
+	// if err != nil {
+	// 	return nil, err
+	// }
+	c.Client, err = ensweb.NewClient(cfg, log)
 	if err != nil {
 		return nil, err
 	}

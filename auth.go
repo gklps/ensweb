@@ -48,6 +48,13 @@ func (s *Server) SessionAuthHandle(claims jwt.Claims, sessionName string, sessio
 	return HandlerFunc(func(req *Request) *Result {
 
 		token := s.GetSessionCookies(req, sessionName, sessionKey)
+		if token == nil {
+			if ef != nil {
+				return ef(req)
+			} else {
+				return s.RenderJSONError(req, http.StatusForbidden, "invalid session", "invalid session")
+			}
+		}
 		err := s.ValidateJWTToken(token.(string), claims)
 		if err != nil {
 			if ef != nil {

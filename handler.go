@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"path"
 	"strings"
 	"time"
 
@@ -188,9 +187,11 @@ func basicHandleFunc(s *Server, hf HandlerFunc) http.Handler {
 func indexRoute(s *Server, dirPath string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fs := http.FileServer(http.Dir(dirPath))
+
 		// If the requested file exists then return if; otherwise return index.html (fileserver default page)
 		if r.URL.Path != "/" {
-			fullPath := dirPath + strings.TrimPrefix(path.Clean(r.URL.Path), "/")
+			r.URL.Path = strings.TrimPrefix(r.URL.Path, s.prefixPath)
+			fullPath := dirPath + r.URL.Path
 			_, err := os.Stat(fullPath)
 			if err != nil {
 				if !os.IsNotExist(err) {
@@ -281,6 +282,44 @@ func (s *Server) ParseMultiPartForm(req *Request, dirPath string) ([]string, map
 	}
 
 	return paramFiles, paramTexts, nil
+}
+
+func (s *Server) Redirect(req *Request, url string) *Result {
+	r := req.r
+	w := req.w
+	http.Redirect(w, r, url, http.StatusSeeOther)
+	return &Result{
+		Status: http.StatusSeeOther,
+		Done:   true,
+	}
+}
+
+func (s *Server) ServerStatic(req *Request) *Result {
+	r := req.r
+	w := req.w
+
+	fs := http.FileServer(http.Dir(s.publicPath))
+
+	// If the requested file exists then return if; otherwise return index.html (fileserver default page)
+	if r.URL.Path != "/" {
+		r.URL.Path = strings.TrimPrefix(r.URL.Path, s.prefixPath)
+		fullPath := s.publicPath + r.URL.Path
+		_, err := os.Stat(fullPath)
+		if err != nil {
+			if !os.IsNotExist(err) {
+				panic(err)
+			}
+			fmt.Println("Not Found : ", r.URL.Path)
+			// Requested file does not exist so we return the default (resolves to index.html)
+			r.URL.Path = "/"
+		}
+	}
+	fs.ServeHTTP(w, r)
+	res := &Result{
+		Status: http.StatusOK,
+		Done:   true,
+	}
+	return res
 }
 
 // func (s *Server) ParseMultiPartForm(req *Request, dirPath string) ([]string, map[string]string, error) {

@@ -161,6 +161,10 @@ func (req *Request) GetHTTPRequest() *http.Request {
 	return req.r
 }
 
+func (req *Request) GetHTTPWritter() http.ResponseWriter {
+	return req.w
+}
+
 func (s *Server) getTenantID(r *http.Request) uuid.UUID {
 	// ::TODO to be addressed
 	return s.defaultTenantID

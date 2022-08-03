@@ -51,6 +51,7 @@ type Server struct {
 	jwtSecret       string
 	rootPath        string
 	publicPath      string
+	prefixPath      string
 	apiKey          string
 	ss              map[string]*SessionStore
 	debugMode       bool

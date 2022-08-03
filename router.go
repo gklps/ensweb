@@ -15,6 +15,12 @@ func (s *Server) AddRoute(path string, method string, hf HandlerFunc) {
 	s.mux.Handle(path, basicHandleFunc(s, hf)).Methods(method)
 }
 
+func (s *Server) AddPrefixRoute(prefix string, dirpath string, hf HandlerFunc) {
+	s.prefixPath = prefix
+	s.publicPath = dirpath
+	s.mux.PathPrefix(prefix).Handler(basicHandleFunc(s, hf))
+}
+
 func (s *Server) EnableSWagger(url string) {
 
 	s.mux.PathPrefix("/swagger/").Handler(httpSwagger.Handler(
@@ -29,8 +35,9 @@ func (s *Server) EnableSWagger(url string) {
 // 	s.mux.PathPrefix("/").Handler(http.FileServer(http.Dir(dir)))
 // }
 
-func (s *Server) SetStatic(dir string) {
+func (s *Server) SetStatic(prefix string, dir string) {
 	s.publicPath = dir
+	s.prefixPath = prefix
 	s.mux.PathPrefix("/").Handler(indexRoute(s, dir))
 }
 

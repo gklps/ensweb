@@ -57,7 +57,7 @@ func NewServer(cfg *config.Config, log logger.Logger) (*Server, error) {
 	m, err := NewModel(s.GetDB(), log)
 	s.m = m
 	s.log = log.Named("exampleserver")
-	s.EnableSWagger("ENSWEB Server Example", "This is the exxample server for ensweb framework", "1.0")
+	s.EnableSWagger("http://localhost:9009")
 	s.SetAuditLog(auditLog)
 	s.CreateSessionStore("token-store", "HaiHello", sessions.Options{Path: "/api", HttpOnly: true})
 	s.SetDebugMode()
@@ -79,7 +79,7 @@ func (s *Server) RegisterRoutes() {
 	s.AddRoute(LogoutRoute, "POST", s.SessionAuthHandle(&Token{}, "token-store", "token", s.Logout, nil))
 	s.AddRoute(RegisterRoute, "POST", s.Register)
 	s.AddRoute(HomeRoute, "GET", s.SessionAuthHandle(&Token{}, "token-store", "token", s.LoginSession, nil))
-	s.SetStatic("./ui/build/")
+	s.SetStatic("/", "./ui/build/")
 }
 
 func (s *Server) Index(req *ensweb.Request) *ensweb.Result {

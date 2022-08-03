@@ -146,6 +146,9 @@ func (b *Base) BeforeSave(scope *gorm.Scope) error {
 
 func (s *Server) SetupEntity(cfg EntityConfig) error {
 	s.entityConfig = cfg
+	if s.db == nil {
+		return fmt.Errorf("db is not confgured")
+	}
 	err := s.db.InitTable(cfg.TenantTableName, &Tenant{})
 	if err != nil {
 		return err
@@ -162,17 +165,19 @@ func (s *Server) SetupEntity(cfg EntityConfig) error {
 	if err != nil {
 		return err
 	}
-	err = s.AddForienKey(cfg.UserRoleTableName, &UserRole{}, "UserId", cfg.UserTableName, "Id")
-	if err != nil {
-		return err
-	}
-	err = s.AddForienKey(cfg.UserRoleTableName, &UserRole{}, "RoleId", cfg.RoleTableName, "Id")
-	if err != nil {
-		return err
+	if s.cfg.DBType != "Sqlite3" {
+		err = s.AddForienKey(cfg.UserRoleTableName, &UserRole{}, "UserId", cfg.UserTableName, "Id")
+		if err != nil {
+			return err
+		}
+		err = s.AddForienKey(cfg.UserRoleTableName, &UserRole{}, "RoleId", cfg.RoleTableName, "Id")
+		if err != nil {
+			return err
+		}
 	}
 	t, err := s.GetTenant(cfg.DefaultTenantName)
 	if err != nil {
-		t := &Tenant{
+		t = &Tenant{
 			Name: cfg.DefaultTenantName,
 		}
 		err = s.CreateTenant(t)
@@ -326,7 +331,7 @@ func (s *Server) CreateTenant(t *Tenant) error {
 func (s *Server) GetUser(tenantID interface{}, userName string) (*User, error) {
 	var u User
 	value := make([]interface{}, 0)
-	value = append(value, userName)
+	value = append(value, strings.ToUpper(userName))
 	value = append(value, false)
 	err := s.db.FindNew(tenantID, s.entityConfig.UserTableName, "NormalizedUserName=? AND IsDeleted=?", &u, value...)
 	if err != nil {
