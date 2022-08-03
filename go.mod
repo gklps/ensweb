@@ -3,9 +3,9 @@ module github.com/EnsurityTechnologies/ensweb
 go 1.16
 
 require (
-	github.com/EnsurityTechnologies/adapter v1.0.2
+	github.com/EnsurityTechnologies/adapter v1.0.3
 	github.com/EnsurityTechnologies/config v1.0.0
-	github.com/EnsurityTechnologies/enscrypt v1.0.0 // indirect
+	github.com/EnsurityTechnologies/enscrypt v1.0.0
 	github.com/EnsurityTechnologies/helper v1.0.0
 	github.com/EnsurityTechnologies/logger v1.0.0
 	github.com/EnsurityTechnologies/uuid v1.0.0
@@ -33,5 +33,4 @@ require (
 	golang.org/x/net v0.0.0-20220622184535-263ec571b305 // indirect
 	golang.org/x/sys v0.0.0-20220622161953-175b2fd9d664 // indirect
 	golang.org/x/tools v0.1.11 // indirect
-	gorm.io/gorm v1.23.8 // indirect
 )
