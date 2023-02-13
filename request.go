@@ -166,8 +166,12 @@ func (req *Request) GetHTTPWritter() http.ResponseWriter {
 }
 
 func (s *Server) getTenantID(r *http.Request) uuid.UUID {
-	// ::TODO to be addressed
-	return s.defaultTenantID
+	if s.tcb == nil {
+		return s.defaultTenantID
+	}
+	url := r.Host
+	url = strings.TrimPrefix(url, "https://")
+	return s.tcb(url)
 }
 
 func basicRequestFunc(s *Server, w http.ResponseWriter, r *http.Request) *Request {

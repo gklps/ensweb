@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/EnsurityTechnologies/adapter"
@@ -37,6 +36,7 @@ const (
 type HandlerFunc func(req *Request) *Result
 type AuthFunc func(req *Request) bool
 type ShutdownFunc func() error
+type GetTenantCBFunc func(tenantName string) uuid.UUID
 
 // Server defines server
 type Server struct {
@@ -59,6 +59,7 @@ type Server struct {
 	entities        map[string]Entity
 	entityConfig    EntityConfig
 	defaultTenantID uuid.UUID
+	tcb             GetTenantCBFunc
 }
 
 type ServerConfig struct {
@@ -88,9 +89,9 @@ func SetServerTimeout(timeout time.Duration) ServerOptions {
 
 // NewServer create new server instances
 func NewServer(cfg *config.Config, serverCfg *ServerConfig, log logger.Logger, options ...ServerOptions) (Server, error) {
-	if os.Getenv("ASPNETCORE_PORT") != "" {
-		cfg.HostPort = os.Getenv("ASPNETCORE_PORT")
-	}
+	// if os.Getenv("ASPNETCORE_PORT") != "" {
+	// 	cfg.HostPort = os.Getenv("ASPNETCORE_PORT")
+	// }
 	addr := net.JoinHostPort(cfg.HostAddress, cfg.HostPort)
 	s := &http.Server{
 		Addr:         addr,
@@ -165,11 +166,30 @@ func (s *Server) Start() error {
 	// Setup the handler before starting
 	s.s.Handler = s.mux
 	s.log.Info(fmt.Sprintf("Starting Server at %s", s.s.Addr))
+	ln, err := net.Listen("tcp", s.s.Addr)
+	if err != nil {
+		return err
+	}
+	connPort := fmt.Sprintf("%d", ln.Addr().(*net.TCPAddr).Port)
+	if connPort != s.cfg.HostPort {
+		s.log.Info("Requested port is not available, using the other port", "port", connPort)
+		s.cfg.HostPort = connPort
+		addr := net.JoinHostPort(s.cfg.HostAddress, s.cfg.HostPort)
+		serverURL := "http://" + addr
+		if s.cfg.Production == "true" {
+			serverURL = "https://" + addr
+		}
+		s.url = serverURL
+	}
+	str := fmt.Sprintf("Server running at : %s", s.url)
+	s.log.Info(str)
 	if s.cfg.Production == "true" {
-		go s.s.ListenAndServeTLS(s.cfg.CertFile, s.cfg.KeyFile)
+		go s.s.ServeTLS(ln, s.cfg.CertFile, s.cfg.KeyFile)
+		//go s.s.ListenAndServeTLS(s.cfg.CertFile, s.cfg.KeyFile)
 		return nil
 	} else {
-		go s.s.ListenAndServe()
+		go s.s.Serve(ln)
+		//go s.s.ListenAndServe()
 		return nil
 	}
 }
@@ -194,6 +214,10 @@ func (s *Server) Shutdown() error {
 
 func (s *Server) SetDefaultTenant(id uuid.UUID) {
 	s.defaultTenantID = id
+}
+
+func (s *Server) SetTenantCBFunc(tcb GetTenantCBFunc) {
+	s.tcb = tcb
 }
 
 // GetDB will return DB
