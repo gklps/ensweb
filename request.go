@@ -37,10 +37,11 @@ type Request struct {
 }
 
 type ClientToken struct {
-	Token       string
-	BearerToken bool
-	Verified    bool
-	Model       interface{}
+	Token          string
+	BearerToken    bool
+	APIKeyVerified bool
+	Verified       bool
+	Model          interface{}
 }
 
 // Connection represents the connection information for a request.

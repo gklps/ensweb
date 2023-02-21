@@ -40,6 +40,7 @@ func (s *Server) APIKeyAuthHandle(hf HandlerFunc, ef HandlerFunc) HandlerFunc {
 				return s.RenderJSONError(req, http.StatusForbidden, "API Key is not matched", "API Key is not matched")
 			}
 		}
+		req.ClientToken.APIKeyVerified = true
 		return hf(req)
 	})
 }
