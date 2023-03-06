@@ -81,6 +81,7 @@ type ServerOptions = func(*Server) error
 
 func SetServerTimeout(timeout time.Duration) ServerOptions {
 	return func(s *Server) error {
+		s.s.IdleTimeout = timeout
 		s.s.ReadTimeout = timeout
 		s.s.WriteTimeout = timeout
 		return nil
@@ -95,6 +96,7 @@ func NewServer(cfg *config.Config, serverCfg *ServerConfig, log logger.Logger, o
 	addr := net.JoinHostPort(cfg.HostAddress, cfg.HostPort)
 	s := &http.Server{
 		Addr:         addr,
+		IdleTimeout:  DefaultTimeout,
 		ReadTimeout:  DefaultTimeout,
 		WriteTimeout: DefaultTimeout,
 	}
