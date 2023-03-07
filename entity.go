@@ -149,19 +149,19 @@ func (s *Server) SetupEntity(cfg EntityConfig) error {
 	if s.db == nil {
 		return fmt.Errorf("db is not confgured")
 	}
-	err := s.db.InitTable(cfg.TenantTableName, &Tenant{})
+	err := s.db.InitTable(cfg.TenantTableName, &Tenant{}, true)
 	if err != nil {
 		return err
 	}
-	err = s.db.InitTable(cfg.UserTableName, &User{})
+	err = s.db.InitTable(cfg.UserTableName, &User{}, true)
 	if err != nil {
 		return err
 	}
-	err = s.db.InitTable(cfg.RoleTableName, &Role{})
+	err = s.db.InitTable(cfg.RoleTableName, &Role{}, true)
 	if err != nil {
 		return err
 	}
-	err = s.db.InitTable(cfg.UserRoleTableName, &UserRole{})
+	err = s.db.InitTable(cfg.UserRoleTableName, &UserRole{}, true)
 	if err != nil {
 		return err
 	}
@@ -193,7 +193,7 @@ func (s *Server) AddEntity(entitytName string, entityModel interface{}) error {
 	if s.db == nil {
 		return fmt.Errorf("db is not initialised")
 	}
-	return s.db.InitTable(entitytName, entityModel)
+	return s.db.InitTable(entitytName, entityModel, true)
 }
 
 // DropTable drop the table
