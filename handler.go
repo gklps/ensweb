@@ -67,9 +67,9 @@ func parseQuery(values url.Values) map[string]interface{} {
 // maintain backwards compatibility, this will err on the side of JSON.
 // The request will be considered a form only if:
 //
-//   1. The content type is "application/x-www-form-urlencoded"
-//   2. The start of the request doesn't look like JSON. For this test we
-//      we expect the body to begin with { or [, ignoring leading whitespace.
+//  1. The content type is "application/x-www-form-urlencoded"
+//  2. The start of the request doesn't look like JSON. For this test we
+//     we expect the body to begin with { or [, ignoring leading whitespace.
 func isForm(head []byte, contentType string) bool {
 	contentType, _, err := mime.ParseMediaType(contentType)
 
@@ -267,17 +267,20 @@ func (s *Server) ParseMultiPartForm(req *Request, dirPath string) ([]string, map
 		if err != nil {
 			return nil, nil, fmt.Errorf("invalid form file")
 		}
-		defer file.Close()
 		localFileName := dirPath + fileHeader.Filename
 		out, err := os.OpenFile(localFileName, os.O_CREATE|os.O_RDWR, 0777)
 		if err != nil {
+			file.Close()
 			return nil, nil, fmt.Errorf("faile to open file")
 		}
-		defer out.Close()
 		_, err = io.Copy(out, file)
 		if err != nil {
+			file.Close()
+			out.Close()
 			return nil, nil, fmt.Errorf("faile to copy file")
 		}
+		out.Close()
+		file.Close()
 		paramFiles = append(paramFiles, localFileName)
 	}
 

@@ -162,16 +162,17 @@ func (s *Server) RenderMultiFormFile(req *Request, field map[string]string, file
 		if err != nil {
 			return s.RenderJSON(req, nil, http.StatusInternalServerError)
 		}
-		defer f.Close()
-
 		part, err := writer.CreateFormFile(k, filepath.Base(v))
 		if err != nil {
+			f.Close()
 			return s.RenderJSON(req, nil, http.StatusInternalServerError)
 		}
 		_, err = io.Copy(part, f)
 		if err != nil {
+			f.Close()
 			return s.RenderJSON(req, nil, http.StatusInternalServerError)
 		}
+		f.Close()
 	}
 	err := writer.Close()
 	if err != nil {
