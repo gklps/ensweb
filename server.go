@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/EnsurityTechnologies/adapter"
@@ -90,9 +91,9 @@ func SetServerTimeout(timeout time.Duration) ServerOptions {
 
 // NewServer create new server instances
 func NewServer(cfg *config.Config, serverCfg *ServerConfig, log logger.Logger, options ...ServerOptions) (Server, error) {
-	// if os.Getenv("ASPNETCORE_PORT") != "" {
-	// 	cfg.HostPort = os.Getenv("ASPNETCORE_PORT")
-	// }
+	if os.Getenv("ASPNETCORE_PORT") != "" {
+		cfg.HostPort = os.Getenv("ASPNETCORE_PORT")
+	}
 	addr := net.JoinHostPort(cfg.HostAddress, cfg.HostPort)
 	s := &http.Server{
 		Addr:         addr,
@@ -212,6 +213,10 @@ func (s *Server) Shutdown() error {
 		}
 	}
 	return s.s.Shutdown(ctx)
+}
+
+func (s *Server) GetDefaultTenant() uuid.UUID {
+	return s.defaultTenantID
 }
 
 func (s *Server) SetDefaultTenant(id uuid.UUID) {

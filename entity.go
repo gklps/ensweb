@@ -80,7 +80,11 @@ type User struct {
 	LockoutEnabled       bool      `gorm:"column:LockoutEnabled;not null;type:bit"`
 	AccessFailedCount    int       `gorm:"column:AccessFailedCount;not null"`
 	ExtraProperties      string    `gorm:"column:ExtraProperties;not null"`
-	Roles                []Role
+}
+
+type UserVar struct {
+	User  *User
+	Roles []Role
 }
 
 type Role struct {
@@ -309,14 +313,16 @@ func (s *Server) CreateTenant(t *Tenant) error {
 	if err != nil {
 		return err
 	}
-	u := &User{
-		Base: Base{
-			TenantID: t.ID,
+	uv := &UserVar{
+		User: &User{
+			Base: Base{
+				TenantID: t.ID,
+			},
+			UserName:           s.entityConfig.DefaultAdminName,
+			NormalizedUserName: strings.ToUpper(s.entityConfig.DefaultAdminName),
+			Name:               "Administrator",
+			PasswordHash:       enscrypt.HashPassword(s.entityConfig.DefaultAdminPassword, 3, 1, 1000),
 		},
-		UserName:           s.entityConfig.DefaultAdminName,
-		NormalizedUserName: strings.ToUpper(s.entityConfig.DefaultAdminName),
-		Name:               "Administrator",
-		PasswordHash:       enscrypt.HashPassword(s.entityConfig.DefaultAdminPassword, 3, 1, 1000),
 		Roles: []Role{
 			{
 				Name:           "admin",
@@ -324,11 +330,11 @@ func (s *Server) CreateTenant(t *Tenant) error {
 			},
 		},
 	}
-	err = s.CreateUser(u)
+	err = s.CreateUser(uv)
 	return err
 }
 
-func (s *Server) GetUser(tenantID interface{}, userName string) (*User, error) {
+func (s *Server) GetUser(tenantID interface{}, userName string) (*UserVar, error) {
 	var u User
 	value := make([]interface{}, 0)
 	value = append(value, strings.ToUpper(userName))
@@ -341,19 +347,22 @@ func (s *Server) GetUser(tenantID interface{}, userName string) (*User, error) {
 	if err != nil {
 		return nil, err
 	}
-	u.Roles = make([]Role, 0)
+	roles := make([]Role, 0)
 	for i := range ur {
 		var r Role
 		err = s.db.FindNew(tenantID, s.entityConfig.RoleTableName, "Id=?", &r, ur[i].RoleID)
 		if err != nil {
 			return nil, err
 		}
-		u.Roles = append(u.Roles, r)
+		roles = append(roles, r)
 	}
-	return &u, nil
+	return &UserVar{
+		User:  &u,
+		Roles: roles,
+	}, nil
 }
 
-func (s *Server) GetUserByID(tenantID interface{}, id uuid.UUID) (*User, error) {
+func (s *Server) GetUserByID(tenantID interface{}, id uuid.UUID) (*UserVar, error) {
 	var u User
 	value := make([]interface{}, 0)
 	value = append(value, id)
@@ -366,76 +375,79 @@ func (s *Server) GetUserByID(tenantID interface{}, id uuid.UUID) (*User, error) 
 	if err != nil {
 		return nil, err
 	}
-	u.Roles = make([]Role, 0)
+	roles := make([]Role, 0)
 	for i := range ur {
 		var r Role
 		err = s.db.FindNew(tenantID, s.entityConfig.RoleTableName, "Id=?", &r, ur[i].RoleID)
 		if err != nil {
 			return nil, err
 		}
-		u.Roles = append(u.Roles, r)
+		roles = append(roles, r)
 	}
-	return &u, nil
+	return &UserVar{
+		User:  &u,
+		Roles: roles,
+	}, nil
 }
 
-func (s *Server) GetUsers(tenantID interface{}, format string, value ...interface{}) ([]User, error) {
-	var us []User
-	if format == "*" {
-		format = "IsDeleted=?"
-	} else {
-		format = format + " AND isDeleted=?"
-	}
-	value = append(value, false)
-	err := s.db.FindNew(tenantID, s.entityConfig.UserTableName, format, &us, value...)
-	if err != nil {
-		return nil, err
-	}
-	for i := range us {
-		ur, err := s.GetUserRole(&us[i])
-		if err != nil {
-			return nil, err
-		}
-		us[i].Roles = make([]Role, 0)
-		for i := range ur {
-			var r Role
-			err = s.db.FindNew(tenantID, s.entityConfig.RoleTableName, "Id=?", &r, ur[i].RoleID)
-			if err != nil {
-				return nil, err
-			}
-			us[i].Roles = append(us[i].Roles, r)
-		}
-	}
-	return us, nil
-}
+// func (s *Server) GetUsers(tenantID interface{}, format string, value ...interface{}) ([]UserVar, error) {
+// 	var us []User
+// 	if format == "*" {
+// 		format = "IsDeleted=?"
+// 	} else {
+// 		format = format + " AND isDeleted=?"
+// 	}
+// 	value = append(value, false)
+// 	err := s.db.FindNew(tenantID, s.entityConfig.UserTableName, format, &us, value...)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	for i := range us {
+// 		ur, err := s.GetUserRole(&us[i])
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		us[i].Roles = make([]Role, 0)
+// 		for i := range ur {
+// 			var r Role
+// 			err = s.db.FindNew(tenantID, s.entityConfig.RoleTableName, "Id=?", &r, ur[i].RoleID)
+// 			if err != nil {
+// 				return nil, err
+// 			}
+// 			us[i].Roles = append(us[i].Roles, r)
+// 		}
+// 	}
+// 	return us, nil
+// }
 
-func (s *Server) CreateUser(u *User) error {
-	err := s.db.Create(s.entityConfig.UserTableName, u)
+func (s *Server) CreateUser(uv *UserVar) error {
+	err := s.db.Create(s.entityConfig.UserTableName, uv.User)
 	if err != nil {
 		return err
 	}
-	for i := range u.Roles {
-		r, err := s.GetRole(u.Roles[i].Name)
+	for i := range uv.Roles {
+		r, err := s.GetRole(uv.Roles[i].Name)
 		if err != nil {
 			return err
 		}
 		ur := &UserRole{
-			UserID:   u.ID,
+			UserID:   uv.User.ID,
 			RoleID:   r.ID,
-			TenantID: u.TenantID,
+			TenantID: uv.User.TenantID,
 		}
 		err = s.CreateUserRole(ur)
 		if err != nil {
 			return err
 		}
 	}
-	var roles []Role
-	err = s.db.FindNew(u.TenantID, s.entityConfig.RoleTableName, "IsDefault=?", &roles, true)
+	var rs []Role
+	err = s.db.FindNew(uv.User.TenantID, s.entityConfig.RoleTableName, "IsDefault=?", &rs, true)
 	if err == nil {
-		for _, r := range roles {
+		for _, r := range rs {
 			ur := &UserRole{
-				UserID:   u.ID,
+				UserID:   uv.User.ID,
 				RoleID:   r.ID,
-				TenantID: u.TenantID,
+				TenantID: uv.User.TenantID,
 			}
 			err = s.CreateUserRole(ur)
 			if err != nil {
@@ -447,13 +459,12 @@ func (s *Server) CreateUser(u *User) error {
 }
 
 func (s *Server) DeleteUser(tenantID interface{}, id uuid.UUID) error {
-	u, err := s.GetUserByID(tenantID, id)
+	uv, err := s.GetUserByID(tenantID, id)
 	if err != nil {
 		return err
 	}
-	u.IsDeleted = true
-	u.Roles = nil
-	return s.UpdateUser(u)
+	uv.User.IsDeleted = true
+	return s.UpdateUser(uv.User)
 }
 
 func (s *Server) UpdateUser(u *User) error {
@@ -461,7 +472,7 @@ func (s *Server) UpdateUser(u *User) error {
 }
 
 func (s *Server) LoginUser(tenantID interface{}, req *LoginRequest) *LoginResponse {
-	u, err := s.GetUser(tenantID, req.UserName)
+	uv, err := s.GetUser(tenantID, req.UserName)
 	resp := &LoginResponse{
 		Status: false,
 	}
@@ -469,17 +480,17 @@ func (s *Server) LoginUser(tenantID interface{}, req *LoginRequest) *LoginRespon
 		resp.Message = "User not found"
 		return resp
 	}
-	if enscrypt.VerifyPassword(req.Password, u.PasswordHash) {
+	if enscrypt.VerifyPassword(req.Password, uv.User.PasswordHash) {
 		role := "user"
-		for _, r := range u.Roles {
+		for _, r := range uv.Roles {
 			if r.Name == "admin" {
 				role = "admin"
 			}
 		}
 		expiresAt := time.Now().Add(time.Minute * 60).Unix()
 		claims := BasicToken{
-			u.Name,
-			u.ID.String(),
+			uv.User.Name,
+			uv.User.ID.String(),
 			role,
 			jwt.StandardClaims{
 				ExpiresAt: expiresAt,
@@ -491,12 +502,12 @@ func (s *Server) LoginUser(tenantID interface{}, req *LoginRequest) *LoginRespon
 		resp.Message = "User logged in successfully"
 		resp.Token = token
 		resp.Role = role
-		resp.User = u
+		resp.User = uv.User
 		return resp
 	} else {
 		resp.Message = "Password mismatch"
-		u.AccessFailedCount++
-		s.UpdateUser(u)
+		uv.User.AccessFailedCount++
+		s.UpdateUser(uv.User)
 		return resp
 	}
 }

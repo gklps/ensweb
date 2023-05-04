@@ -33,6 +33,7 @@ type Client struct {
 	defaultTimeout time.Duration
 	token          string
 	cookies        []*http.Cookie
+	header         map[string]string
 }
 
 type ClientOptions = func(*Client) error
@@ -40,6 +41,16 @@ type ClientOptions = func(*Client) error
 func SetClientDefaultTimeout(timeout time.Duration) ClientOptions {
 	return func(c *Client) error {
 		c.defaultTimeout = timeout
+		return nil
+	}
+}
+
+func SetClientHeader(key string, value string) ClientOptions {
+	return func(c *Client) error {
+		if c.header == nil {
+			c.header = make(map[string]string)
+		}
+		c.header[key] = value
 		return nil
 	}
 }
@@ -90,6 +101,7 @@ func NewClient(config *config.Config, log logger.Logger, options ...ClientOption
 		address: address,
 		addr:    addr,
 		hc:      hc,
+		header:  make(map[string]string),
 	}
 
 	for _, op := range options {
@@ -125,6 +137,9 @@ func (c *Client) JSONRequest(method string, requestPath string, model interface{
 	req.URL.Scheme = url.Scheme
 	req.URL.Host = url.Host
 	req.Header.Set("Content-Type", "application/json")
+	for k, v := range c.header {
+		req.Header.Set(k, v)
+	}
 	return req, err
 }
 
@@ -170,6 +185,9 @@ func (c *Client) MultiFormRequest(method string, requestPath string, field map[s
 	req.URL.User = url.User
 	req.URL.Scheme = url.Scheme
 	req.URL.Host = url.Host
+	for k, v := range c.header {
+		req.Header.Set(k, v)
+	}
 	return req, err
 }
 
