@@ -72,7 +72,7 @@ func NewModel(db *adapter.Adapter, log logger.Logger) (*Model, error) {
 		db:  db,
 		log: log,
 	}
-	err := db.InitTable(UserTable, &User{})
+	err := db.InitTable(UserTable, &User{}, false)
 	if err != nil {
 		return nil, err
 	}
