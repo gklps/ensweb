@@ -6,12 +6,12 @@ import (
 	"time"
 
 	"github.com/EnsurityTechnologies/config"
-	"github.com/EnsurityTechnologies/ensweb"
-	"github.com/EnsurityTechnologies/ensweb/example/server/docs"
-	_ "github.com/EnsurityTechnologies/ensweb/example/server/docs"
 	"github.com/EnsurityTechnologies/logger"
 	"github.com/EnsurityTechnologies/uuid"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/gklps/ensweb"
+	"github.com/gklps/ensweb/example/server/docs"
+	_ "github.com/gklps/ensweb/example/server/docs"
 	"github.com/gorilla/sessions"
 )
 

@@ -6,9 +6,9 @@ import (
 	"syscall"
 
 	"github.com/EnsurityTechnologies/config"
-	_ "github.com/EnsurityTechnologies/ensweb"
-	_ "github.com/EnsurityTechnologies/ensweb/example/server/docs"
 	"github.com/EnsurityTechnologies/logger"
+	_ "github.com/gklps/ensweb"
+	_ "github.com/gklps/ensweb/example/server/docs"
 )
 
 func main() {
