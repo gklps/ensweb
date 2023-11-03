@@ -1,4 +1,4 @@
-module github.com/EnsurityTechnologies/ensweb
+module github.com/gklps/ensweb
 
 go 1.16
 
